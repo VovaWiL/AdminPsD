@@ -1,1 +1,190 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timate Access</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #0a0a0a;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
 
+        /* Анимация выезда заголовка сверху */
+        @keyframes slideDown {
+            0% {
+                transform: translateY(-150px);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Анимация появления формы */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .animate-slide-down {
+            animation: slideDown 1.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 1s ease-out 0.8s both;
+        }
+
+        .input-field {
+            background-color: #1c1c1c;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            border-color: #0070f3;
+            outline: none;
+            background-color: #252525;
+        }
+
+        .primary-button {
+            background-color: #0070f3;
+            transition: all 0.2s;
+        }
+
+        .primary-button:hover {
+            background-color: #0061d5;
+            transform: translateY(-1px);
+        }
+
+        .loader {
+            border: 3px solid #1c1c1c;
+            border-top: 3px solid #0070f3;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: none;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .hidden-content {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="mainContainer" class="w-full max-w-[420px] px-6 text-center">
+        <h1 id="mainTitle" class="text-4xl md:text-5xl font-bold tracking-tighter mb-6 animate-slide-down">
+            Добро пожаловать
+        </h1>
+        
+        <div id="authBox" class="animate-fade-in">
+            <form id="authForm" class="space-y-4">
+                <input 
+                    type="password" 
+                    id="secretKey" 
+                    placeholder="Введите секретный ключ" 
+                    class="input-field w-full py-4 px-5 rounded-xl text-white placeholder-gray-500 text-center text-lg"
+                    required
+                >
+                <button 
+                    id="submitBtn"
+                    type="submit" 
+                    class="primary-button w-full py-4 rounded-xl font-bold text-white uppercase tracking-wider flex items-center justify-center gap-3"
+                >
+                    <span id="btnText">Войти</span>
+                    <div id="btnLoader" class="loader"></div>
+                </button>
+            </form>
+            <p id="errorMsg" class="mt-4 text-red-500 text-sm opacity-0 transition-opacity duration-300">
+                Неверный ключ доступа
+            </p>
+        </div>
+
+        <div id="redirectStatus" class="hidden-content mt-4 text-blue-500 text-sm animate-pulse">
+            Переход в панель управления...
+        </div>
+    </div>
+
+    <script>
+        const authForm = document.getElementById('authForm');
+        const secretInput = document.getElementById('secretKey');
+        const errorMsg = document.getElementById('errorMsg');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const btnLoader = document.getElementById('btnLoader');
+        const redirectStatus = document.getElementById('redirectStatus');
+        const authBox = document.getElementById('authBox');
+        const mainTitle = document.getElementById('mainTitle');
+
+        const ENC_KEY = "dHJlZ2ZkdHJAYkExMzI="; 
+        const TARGET_URL = 'https://admin.timate.ru/panel';
+        const STORAGE_KEY = 'timate_auth_session';
+
+        function doRedirect() {
+            authBox.classList.add('hidden-content');
+            mainTitle.classList.add('hidden-content');
+            redirectStatus.classList.remove('hidden-content');
+            window.location.href = TARGET_URL;
+        }
+
+        window.onload = () => {
+            if (localStorage.getItem(STORAGE_KEY) === 'true') {
+                doRedirect();
+            }
+        };
+
+        authForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // Проверка введенного ключа через декодирование
+            if (btoa(secretInput.value) === ENC_KEY) {
+                localStorage.setItem(STORAGE_KEY, 'true');
+                btnText.textContent = 'Проверка...';
+                btnLoader.style.display = 'block';
+                submitBtn.disabled = true;
+                secretInput.disabled = true;
+                errorMsg.style.opacity = '0';
+
+                setTimeout(doRedirect, 800);
+            } else {
+                errorMsg.style.opacity = '1';
+                secretInput.classList.add('border-red-500');
+                secretInput.animate([
+                    { transform: 'translateX(-5px)' },
+                    { transform: 'translateX(5px)' },
+                    { transform: 'translateX(-5px)' },
+                    { transform: 'translateX(0)' }
+                ], { duration: 250 });
+
+                setTimeout(() => {
+                    errorMsg.style.opacity = '0';
+                    secretInput.classList.remove('border-red-500');
+                }, 2500);
+            }
+        });
+
+        secretInput.addEventListener('input', () => {
+            errorMsg.style.opacity = '0';
+            secretInput.classList.remove('border-red-500');
+        });
+    </script>
+</body>
+</html>
